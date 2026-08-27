@@ -75,3 +75,39 @@ Created the foundation files for configuration loading, the Express app factory,
 
 **Notes:**
 No database, CSV import, business rule, or final API endpoint logic was implemented in this stage.
+
+### 2026-08-27 — SQLite persistence foundation
+
+**Prompt file:**
+`.github/prompts/implementation/02-database.prompt.md`
+
+**Objective:**
+Implement the in-memory SQLite persistence layer with the normalized movie/producer schema, repository boundary, and basic persistence checks without adding CSV import or API logic.
+
+**Agent result:**
+Created the in-memory SQLite initialization and repository layer for movies, producers, and the `movie_producers` link table. Added an integration-style test that verifies schema creation and persistence behavior through the repository boundary.
+
+**Decisions adopted:**
+- SQLite3 with an in-memory database
+- normalized `movies`, `producers`, and `movie_producers` tables
+- repository boundary encapsulating persistence operations
+- `producer_id` used as the persisted identity in the database layer
+- application startup is separated from the database bootstrap function, in line with the stage requirement
+
+**Decisions rejected:**
+- none
+
+**Files changed:**
+- `package.json`
+- `src/infrastructure/database.ts`
+- `src/infrastructure/repositories/movieRepository.ts`
+- `test/database.test.ts`
+
+**Validation:**
+- tests: PASS
+- lint: PASS
+- typecheck: PASS
+- build: PASS
+
+**Notes:**
+This stage did not add CSV parsing, interval calculation, or HTTP endpoint behavior.
