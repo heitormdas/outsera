@@ -151,3 +151,73 @@ Added the real CSV parser integration, dataset import orchestration, startup boo
 
 **Notes:**
 This stage did not add interval calculation or the final `/producers/intervals` endpoint.
+
+### 2026-08-27 — API boundary for producer intervals
+
+**Prompt file:**
+`.github/prompts/implementation/05-api.prompt.md`
+
+**Objective:**
+Add the HTTP layer for `GET /producers/intervals` while keeping the business rule separate from the controller and repository boundary.
+
+**Agent result:**
+Introduced the application/use-case/controller/repository flow for producer interval retrieval and added an integration test that exercises the Express HTTP layer through Supertest.
+
+**Decisions adopted:**
+- route handler at `GET /producers/intervals`
+- response payload shape matching the specification
+- deterministic ordering by `interval`, then `producer`, then `previousWin`, then `followingWin`
+- business-rule logic kept outside the route handler
+- createApp() remains separate from startup/listen lifecycle
+
+**Decisions rejected:**
+- none
+
+**Files changed:**
+- `src/app.ts`
+- `src/application/useCases/getProducerIntervalsUseCase.ts`
+- `src/infrastructure/repositories/producerIntervalRepository.ts`
+- `src/presentation/controllers/producerIntervalsController.ts`
+- `test/api.test.ts`
+
+**Validation:**
+- tests: PASS
+- lint: PASS
+- typecheck: PASS
+- build: PASS
+
+**Notes:**
+This stage does not add unrelated features beyond the API response contract for producer intervals.
+
+### 2026-08-27 — HTTP integration coverage
+
+**Prompt file:**
+`.github/prompts/review/06-integration-tests.prompt.md`
+
+**Objective:**
+Exercise the application through HTTP with integration coverage for the required business-rule scenarios and check the route contract end-to-end.
+
+**Agent result:**
+Converted the remaining business-rule checks into HTTP-level integration tests and retained route-level coverage for tied minimum, maximum, deterministic ordering, and single-win producers.
+
+**Decisions adopted:**
+- integration tests only
+- `Supertest` exercises the Express route without a real TCP listener
+- scenario coverage includes consecutive intervals and empty eligible sets
+- no unit-test style calls into the business-rule function were retained
+
+**Decisions rejected:**
+- none
+
+**Files changed:**
+- `test/producer-intervals.test.ts`
+- `test/api.test.ts`
+
+**Validation:**
+- tests: PASS
+- lint: PASS
+- typecheck: PASS
+- build: PASS
+
+**Notes:**
+This stage focused on HTTP integration validation and kept the codebase aligned with the specification’s testing constraint.
