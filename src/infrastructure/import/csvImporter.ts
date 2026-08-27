@@ -54,10 +54,12 @@ export async function importCsvDataset(db: DatabaseClient, csvPath: string): Pro
       });
       totalMovies += 1;
 
-      const producers = row.producers
-        .split(',')
-        .map((name) => name.trim())
-        .filter(Boolean);
+      const producers = [...new Set(
+        row.producers
+          .split(',')
+          .map((name) => name.trim())
+          .filter(Boolean),
+      )];
 
       for (const producerName of producers) {
         const existingProducerId = existingProducers.get(producerName);

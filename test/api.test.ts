@@ -231,3 +231,36 @@ test('GET /producers/intervals returns imported CSV data through SQLite', async 
     await fs.rm(tempDir, { recursive: true, force: true });
   }
 });
+
+test('GET /producers/intervals handles duplicate producers in one CSV row', async () => {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'outsera-api-'));
+  const csvPath = path.join(tempDir, 'duplicate-producer.csv');
+
+  await fs.writeFile(
+    csvPath,
+    [
+      'year;title;studios;producers;winner',
+      '2000;Movie A;Studio A;Producer A, Producer A;yes',
+      '2005;Movie B;Studio B;Producer A;yes',
+    ].join('\n'),
+    'utf-8',
+  );
+
+  try {
+    const { db } = await initializeApplication({ port: 3000, csvPath });
+    const app = createApp(
+      { port: 3000, csvPath },
+      { producerIntervalRepository: new SqliteProducerIntervalRepository(db) },
+    );
+
+    const response = await request(app).get('/producers/intervals');
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body, {
+      min: [{ producer: 'Producer A', interval: 5, previousWin: 2000, followingWin: 2005 }],
+      max: [{ producer: 'Producer A', interval: 5, previousWin: 2000, followingWin: 2005 }],
+    });
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  }
+});

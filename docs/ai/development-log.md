@@ -291,3 +291,67 @@ Connected server startup to database initialization and CSV import, added a SQLi
 
 **Notes:**
 The real CSV-to-SQLite-to-HTTP integration path is now covered. The implementation remains limited to the required endpoint and startup behavior.
+
+### 2026-08-27 — Specification audit
+
+**Prompt file:**
+`.github/prompts/review/10-spec-audit.prompt.md`
+
+**Objective:**
+Audit every acceptance criterion against the implementation, tests, documentation, and repository configuration without changing code.
+
+**Agent result:**
+All 43 acceptance criteria passed. The audit identified only non-blocking evidence gaps: no explicit rollback/failure-path test and no documented explanation of the deterministic result ordering.
+
+**Decisions adopted:**
+- retain the current implementation because no specification violation was found
+- carry the two evidence gaps into the final adversarial review and cleanup decision
+
+**Decisions rejected:**
+- none
+
+**Files changed:**
+- `docs/ai/development-log.md`
+
+**Validation:**
+- tests: PASS (14 tests previously validated; audit made no code changes)
+- lint: PASS (audit made no code changes)
+- typecheck: PASS (audit made no code changes)
+- build: PASS (audit made no code changes)
+
+**Notes:**
+The audit confirmed the startup lifecycle, transactional boundaries, consecutive interval semantics, tie preservation, deterministic ordering, API contract, documentation, and Git readiness.
+
+### 2026-08-27 — Adversarial dataset review
+
+**Prompt file:**
+`.github/prompts/review/11-adversarial-datasets.prompt.md`
+
+**Objective:**
+Evaluate hostile and unusual valid datasets against the CSV import, persistence, interval calculation, and HTTP response paths.
+
+**Agent result:**
+Found and corrected a genuine duplicate-producer edge case: repeating the same producer within one movie row could violate the movie-producer primary key. Normalized producer names are now deduplicated per row, and an HTTP integration test covers the behavior.
+
+**Decisions adopted:**
+- deduplicate only identical normalized producer names within one movie row
+- preserve distinct producer names and the existing consecutive-interval semantics
+- retain the current handling of duplicate winning years as defined by the general consecutive-pair rule
+
+**Decisions rejected:**
+- none
+
+**Files changed:**
+- `src/infrastructure/import/csvImporter.ts`
+- `test/api.test.ts`
+- `README.md`
+- `docs/ai/development-log.md`
+
+**Validation:**
+- tests: PASS (15 tests)
+- lint: PASS
+- typecheck: PASS
+- build: PASS
+
+**Notes:**
+The review found no other genuine defects. Remaining unusual cases are handled by the implementation but are not all individually represented by tests.

@@ -79,3 +79,5 @@ Example response:
 ```
 
 When no producer has multiple winning years, both arrays are empty.
+
+Results are ordered deterministically by interval, producer name, previous winning year, and following winning year.
