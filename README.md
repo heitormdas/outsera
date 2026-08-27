@@ -38,6 +38,10 @@ npm start
 
 The server listens on port `3000` by default.
 
+## Development approach
+
+This project was developed using SDD (Spec-Driven Development). The specifications in `specs/` guided the architecture, implementation, integration tests, and validation of the API.
+
 ## Tests and checks
 
 ```bash
