@@ -111,3 +111,43 @@ Created the in-memory SQLite initialization and repository layer for movies, pro
 
 **Notes:**
 This stage did not add CSV parsing, interval calculation, or HTTP endpoint behavior.
+
+### 2026-08-27 — CSV startup import
+
+**Prompt file:**
+`.github/prompts/implementation/03-csv-import.prompt.md`
+
+**Objective:**
+Implement CSV startup import with parsing, normalization, transactional persistence, and startup failure handling, while keeping the stage scoped to import only.
+
+**Agent result:**
+Added the real CSV parser integration, dataset import orchestration, startup bootstrap that initializes schema and imports before server listen, and an integration-style test that verifies the dataset is persisted correctly with both winner and non-winner records.
+
+**Decisions adopted:**
+- `csv-parse` with `;` delimiter and quoted-field support
+- `winner = yes` detection and lowercase normalization
+- multiple producers split by comma and trimmed
+- all records are persisted; winner filtering is deferred to the business-rule stage
+- `startServer()` now initializes the database and imports the CSV before the app listens
+- explicit startup failure on import error
+
+**Decisions rejected:**
+- none
+
+**Files changed:**
+- `package.json`
+- `src/startup.ts`
+- `src/server.ts`
+- `src/infrastructure/import/csvParser.ts`
+- `src/infrastructure/import/csvImporter.ts`
+- `src/infrastructure/repositories/movieRepository.ts`
+- `test/csv-import.test.ts`
+
+**Validation:**
+- tests: PASS
+- lint: PASS
+- typecheck: PASS
+- build: PASS
+
+**Notes:**
+This stage did not add interval calculation or the final `/producers/intervals` endpoint.
