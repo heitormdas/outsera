@@ -2,11 +2,14 @@ import express, { type Express } from 'express';
 
 import type { AppConfig } from './config';
 import { getProducerIntervalsUseCase } from './application/useCases/getProducerIntervalsUseCase';
-import { InMemoryProducerIntervalRepository } from './infrastructure/repositories/producerIntervalRepository';
+import {
+  InMemoryProducerIntervalRepository,
+  type ProducerIntervalRepository,
+} from './infrastructure/repositories/producerIntervalRepository';
 import { getProducerIntervalsController } from './presentation/controllers/producerIntervalsController';
 
 export type AppDependencies = {
-  producerIntervalRepository?: InMemoryProducerIntervalRepository;
+  producerIntervalRepository?: ProducerIntervalRepository;
 };
 
 export function createApp(config: AppConfig, dependencies: AppDependencies = {}): Express {

@@ -252,3 +252,42 @@ Expanded the integration suite to cover the normal dataset, minimum tie, maximum
 
 **Notes:**
 The suite remains focused on actual HTTP behavior and avoids private implementation assertions.
+
+### 2026-08-27 — Senior code review and production-path fixes
+
+**Prompt file:**
+`.github/prompts/review/09-code-review.prompt.md`
+
+**Objective:**
+Review the complete implementation against the specifications and correct genuine production-path defects found by the review.
+
+**Agent result:**
+Connected server startup to database initialization and CSV import, added a SQLite-backed producer interval repository, added an HTTP integration test covering imported CSV data, made CSV persistence transactional, and created the required README.
+
+**Decisions adopted:**
+- application readiness occurs only after database schema creation and CSV import
+- production interval queries read only winning records from SQLite
+- repository test doubles remain available for focused HTTP scenario datasets
+- import failures roll back the active transaction
+- setup, execution, checks, and API behavior are documented in `README.md`
+
+**Decisions rejected:**
+- preserving `ErrorOptions.cause`, because the project targets ES2019 and the current TypeScript library definitions do not support that constructor overload
+
+**Files changed:**
+- `src/app.ts`
+- `src/server.ts`
+- `src/infrastructure/import/csvImporter.ts`
+- `src/infrastructure/repositories/producerIntervalRepository.ts`
+- `src/startup.ts`
+- `test/api.test.ts`
+- `README.md`
+
+**Validation:**
+- tests: PASS (14 tests)
+- lint: PASS
+- typecheck: PASS
+- build: PASS
+
+**Notes:**
+The real CSV-to-SQLite-to-HTTP integration path is now covered. The implementation remains limited to the required endpoint and startup behavior.

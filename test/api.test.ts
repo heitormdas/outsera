@@ -1,9 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import request from 'supertest';
 
 import { createApp } from '../src/app';
-import { InMemoryProducerIntervalRepository } from '../src/infrastructure/repositories/producerIntervalRepository';
+import {
+  InMemoryProducerIntervalRepository,
+  SqliteProducerIntervalRepository,
+} from '../src/infrastructure/repositories/producerIntervalRepository';
+import { initializeApplication } from '../src/startup';
 
 function buildApp(winners: Array<{ producer: string; year: number }>) {
   return createApp(
@@ -188,4 +195,39 @@ test('GET /producers/intervals works with an alternative dataset', async () => {
       { producer: 'Producer B', interval: 10, previousWin: 1995, followingWin: 2005 },
     ],
   });
+});
+
+test('GET /producers/intervals returns imported CSV data through SQLite', async () => {
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'outsera-api-'));
+  const csvPath = path.join(tempDir, 'dataset.csv');
+
+  await fs.writeFile(
+    csvPath,
+    [
+      'year;title;studios;producers;winner',
+      '2000;Movie A;Studio A;Producer A;yes',
+      '2005;Movie B;Studio B;Producer A;yes',
+      '2010;Movie C;Studio C;Producer A;no',
+      '2012;Movie D;Studio D;Producer B;yes',
+    ].join('\n'),
+    'utf-8',
+  );
+
+  try {
+    const { db } = await initializeApplication({ port: 3000, csvPath });
+    const app = createApp(
+      { port: 3000, csvPath },
+      { producerIntervalRepository: new SqliteProducerIntervalRepository(db) },
+    );
+
+    const response = await request(app).get('/producers/intervals');
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body, {
+      min: [{ producer: 'Producer A', interval: 5, previousWin: 2000, followingWin: 2005 }],
+      max: [{ producer: 'Producer A', interval: 5, previousWin: 2000, followingWin: 2005 }],
+    });
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  }
 });

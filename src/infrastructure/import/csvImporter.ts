@@ -10,6 +10,19 @@ export type CsvImportResult = {
   producerCount: number;
 };
 
+function runDatabaseCommand(db: DatabaseClient, sql: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    db.run(sql, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 export async function importCsvDataset(db: DatabaseClient, csvPath: string): Promise<CsvImportResult> {
   const resolvedPath = path.resolve(csvPath);
   const content = await fs.readFile(resolvedPath, 'utf-8');
@@ -20,43 +33,51 @@ export async function importCsvDataset(db: DatabaseClient, csvPath: string): Pro
   let totalMovies = 0;
   let totalProducers = 0;
 
-  for (const row of rows) {
-    const year = Number.parseInt(row.year, 10);
-    const title = row.title;
-    const studios = row.studios;
-    const winner = row.winner.toLowerCase() === 'yes';
+  await runDatabaseCommand(db, 'BEGIN');
 
-    if (!Number.isInteger(year) || !title || !studios) {
-      throw new Error(`Invalid CSV row: ${JSON.stringify(row)}`);
-    }
+  try {
+    for (const row of rows) {
+      const year = Number.parseInt(row.year, 10);
+      const title = row.title;
+      const studios = row.studios;
+      const winner = row.winner.toLowerCase() === 'yes';
 
-    const movieId = await repository.insertMovie({
-      year,
-      title,
-      studios,
-      winner,
-    });
-    totalMovies += 1;
-
-    const producers = row.producers
-      .split(',')
-      .map((name) => name.trim())
-      .filter(Boolean);
-
-    for (const producerName of producers) {
-      const existingProducerId = existingProducers.get(producerName);
-
-      if (existingProducerId !== undefined) {
-        await repository.linkProducerToMovie(movieId, existingProducerId);
-        continue;
+      if (!Number.isInteger(year) || !title || !studios) {
+        throw new Error(`Invalid CSV row: ${JSON.stringify(row)}`);
       }
 
-      const producerId = await repository.insertProducer(producerName);
-      existingProducers.set(producerName, producerId);
-      await repository.linkProducerToMovie(movieId, producerId);
-      totalProducers += 1;
+      const movieId = await repository.insertMovie({
+        year,
+        title,
+        studios,
+        winner,
+      });
+      totalMovies += 1;
+
+      const producers = row.producers
+        .split(',')
+        .map((name) => name.trim())
+        .filter(Boolean);
+
+      for (const producerName of producers) {
+        const existingProducerId = existingProducers.get(producerName);
+
+        if (existingProducerId !== undefined) {
+          await repository.linkProducerToMovie(movieId, existingProducerId);
+          continue;
+        }
+
+        const producerId = await repository.insertProducer(producerName);
+        existingProducers.set(producerName, producerId);
+        await repository.linkProducerToMovie(movieId, producerId);
+        totalProducers += 1;
+      }
     }
+  } catch (error) {
+    await runDatabaseCommand(db, 'ROLLBACK');
+    throw error;
   }
 
+  await runDatabaseCommand(db, 'COMMIT');
   return { movieCount: totalMovies, producerCount: totalProducers };
 }
