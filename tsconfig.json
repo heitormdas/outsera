@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
         "target": "es2019",
-        "moduleResolution": "node",
         "module": "commonjs",
         "lib": [
             "es2019"
@@ -19,18 +18,6 @@
         "noImplicitReturns": true,
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
-        "baseUrl": ".",
-        "paths": {
-            "@src/*": [
-                "./src/*"
-            ],
-            "@modules/*": [
-                "./src/app/modules/*"
-            ],
-            "@test/*": [
-                "./test/*"
-            ]
-        },
         "rootDirs": [
             "./src",
             "./test"
