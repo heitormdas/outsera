@@ -189,29 +189,29 @@ Introduced the application/use-case/controller/repository flow for producer inte
 **Notes:**
 This stage does not add unrelated features beyond the API response contract for producer intervals.
 
-### 2026-08-27 — HTTP integration coverage
+### 2026-08-27 — HTTP integration coverage review
 
 **Prompt file:**
 `.github/prompts/review/06-integration-tests.prompt.md`
 
 **Objective:**
-Exercise the application through HTTP with integration coverage for the required business-rule scenarios and check the route contract end-to-end.
+Implement comprehensive HTTP integration coverage for the required producer-interval scenarios and validate the route contract against the project specification.
 
 **Agent result:**
-Converted the remaining business-rule checks into HTTP-level integration tests and retained route-level coverage for tied minimum, maximum, deterministic ordering, and single-win producers.
+Expanded the integration suite to cover the normal dataset, minimum tie, maximum tie, multiple producers, one-win producer, unordered years, the mandatory consecutive-interval scenario, empty eligible sets, and an alternative dataset.
 
 **Decisions adopted:**
 - integration tests only
-- `Supertest` exercises the Express route without a real TCP listener
-- scenario coverage includes consecutive intervals and empty eligible sets
-- no unit-test style calls into the business-rule function were retained
+- route behavior validated through `Supertest` over the Express app
+- scenarios map directly to the specification’s acceptance criteria
+- ordering remains deterministic and is validated via the actual response payload
 
 **Decisions rejected:**
 - none
 
 **Files changed:**
-- `test/producer-intervals.test.ts`
 - `test/api.test.ts`
+- `test/producer-intervals.test.ts`
 
 **Validation:**
 - tests: PASS
@@ -220,4 +220,4 @@ Converted the remaining business-rule checks into HTTP-level integration tests a
 - build: PASS
 
 **Notes:**
-This stage focused on HTTP integration validation and kept the codebase aligned with the specification’s testing constraint.
+The suite remains focused on actual HTTP behavior and avoids private implementation assertions.
