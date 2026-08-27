@@ -16,6 +16,7 @@ export async function importCsvDataset(db: DatabaseClient, csvPath: string): Pro
   const rows = parseCsvFile(content);
 
   const repository = new MovieRepository(db);
+  const existingProducers = new Map((await repository.listProducers()).map((producer) => [producer.name, producer.id]));
   let totalMovies = 0;
   let totalProducers = 0;
 
@@ -43,15 +44,15 @@ export async function importCsvDataset(db: DatabaseClient, csvPath: string): Pro
       .filter(Boolean);
 
     for (const producerName of producers) {
-      const existingProducers = await repository.listProducers();
-      const match = existingProducers.find((producer) => producer.name === producerName);
+      const existingProducerId = existingProducers.get(producerName);
 
-      if (match) {
-        await repository.linkProducerToMovie(movieId, match.id);
+      if (existingProducerId !== undefined) {
+        await repository.linkProducerToMovie(movieId, existingProducerId);
         continue;
       }
 
       const producerId = await repository.insertProducer(producerName);
+      existingProducers.set(producerName, producerId);
       await repository.linkProducerToMovie(movieId, producerId);
       totalProducers += 1;
     }

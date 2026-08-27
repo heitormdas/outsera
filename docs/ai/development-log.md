@@ -189,6 +189,37 @@ Introduced the application/use-case/controller/repository flow for producer inte
 **Notes:**
 This stage does not add unrelated features beyond the API response contract for producer intervals.
 
+### 2026-08-27 — Performance and hardening review
+
+**Prompt file:**
+`.github/prompts/review/08-performance.prompt.md`
+
+**Objective:**
+Review the CSV import path for algorithmic cost and remove unnecessary repeated lookups without changing behavior.
+
+**Agent result:**
+Replaced the repeated `listProducers()` + `find()` lookup inside the import loop with a single in-memory `Map` of producer names to IDs, so repeated producer names do not trigger an N+1 query pattern during startup import.
+
+**Decisions adopted:**
+- keep the import logic deterministic and business-logic agnostic
+- preserve the repository boundary and import behavior
+- cache producer IDs during a single import run instead of re-querying the database for every producer row
+
+**Decisions rejected:**
+- none
+
+**Files changed:**
+- `src/infrastructure/import/csvImporter.ts`
+
+**Validation:**
+- tests: PASS
+- lint: PASS
+- typecheck: PASS
+- build: PASS
+
+**Notes:**
+This review confirmed that the import path already rejected invalid rows before insertions, so no transactional rollback change was required. The optimization was limited to the real unnecessary repeated producer lookup.
+
 ### 2026-08-27 — HTTP integration coverage review
 
 **Prompt file:**
