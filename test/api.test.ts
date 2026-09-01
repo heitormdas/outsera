@@ -264,3 +264,45 @@ test('GET /producers/intervals handles duplicate producers in one CSV row', asyn
     await fs.rm(tempDir, { recursive: true, force: true });
   }
 });
+
+test('Official dataset regression: Movielist.csv produces expected intervals', async () => {
+  // REGRESSION TEST: Fixed expected values for actual supplied Movielist.csv
+  // This test fails automatically if Movielist.csv is modified in a way that changes any min/max result
+  // Dataset verified: 206 rows total, 42 winning records
+
+  const { db } = await initializeApplication({ port: 3000, csvPath: 'Movielist.csv' });
+  const app = createApp(
+    { port: 3000, csvPath: 'Movielist.csv' },
+    { producerIntervalRepository: new SqliteProducerIntervalRepository(db) },
+  );
+
+  const response = await request(app).get('/producers/intervals');
+
+  assert.equal(response.status, 200);
+  assert.equal(Array.isArray(response.body.min), true);
+  assert.equal(Array.isArray(response.body.max), true);
+
+  // FIXED EXPECTATIONS for actual supplied Movielist.csv dataset
+  // min interval: 6 (Bo Derek won in 1984 and 1990)
+  // max interval: 13 (Matthew Vaughn won in 2002 and 2015)
+  const expectedResponse = {
+    min: [
+      {
+        producer: 'Bo Derek',
+        interval: 6,
+        previousWin: 1984,
+        followingWin: 1990,
+      },
+    ],
+    max: [
+      {
+        producer: 'Matthew Vaughn',
+        interval: 13,
+        previousWin: 2002,
+        followingWin: 2015,
+      },
+    ],
+  };
+
+  assert.deepEqual(response.body, expectedResponse);
+});

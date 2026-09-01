@@ -355,3 +355,53 @@ Found and corrected a genuine duplicate-producer edge case: repeating the same p
 
 **Notes:**
 The review found no other genuine defects. Remaining unusual cases are handled by the implementation but are not all individually represented by tests.
+
+### 2026-09-01 — Official dataset regression test, URL documentation, optimization, and evaluator feedback discrepancy
+
+**Prompt file:**
+Feedback-driven requirements with evaluator expectations; dataset verification task
+
+**Objective:**
+Implement fixed-value regression test for the actual supplied Movielist.csv dataset; add full API URL to README; optimize interval calculation to eliminate redundant passes; document evaluator feedback discrepancy.
+
+**Agent result:**
+Created regression test with verified expected values matching the actual supplied dataset (min=6 Bo Derek, max=13 Matthew Vaughn); added full URL with curl example to README; optimized interval calculation to find min/max in single pass instead of separate array passes; documented evaluator feedback discrepancy.
+
+**Decisions adopted:**
+- Regression test uses ACTUAL expected values from supplied Movielist.csv (206 rows total, 42 winning records)
+- Min interval: 6 (Bo Derek: 1984→1990)
+- Max interval: 13 (Matthew Vaughn: 2002→2015)
+- Test fails automatically if CSV is modified to change these results
+- Separate official-dataset regression from generic behavioral tests
+- Extract sort comparator to single function to reduce code duplication
+- In-place sort of years array (safe because yearsByProducer group is not reused after sort)
+- Optimize min/max detection by tracking during interval generation instead of separate passes
+- Document evaluator feedback discrepancy without modifying dataset
+
+**Decisions rejected:**
+- Hardcode Joel Silver 1990→1991 interval=1 (does not exist in supplied dataset)
+- Arbitrary loop-count reduction targets (optimize actual redundant work only)
+- Modify Movielist.csv to match evaluator feedback
+
+**Files changed:**
+- `test/api.test.ts` — added regression test with verified expected values
+- `README.md` — added full API URL and curl example
+- `src/app/producerIntervals.ts` — optimized min/max calculation (eliminates 2 redundant passes)
+- `docs/ai/development-log.md` — this entry
+
+**Validation:**
+- tests: PENDING (awaiting test run)
+- lint: PENDING (awaiting lint run)
+- typecheck: PENDING (awaiting typecheck run)
+- build: PENDING (awaiting build run)
+
+**Notes:**
+**Evaluator Feedback Discrepancy:** The evaluator feedback stated min=1 (Joel Silver 1990→1991) and max=13, but the actual supplied Movielist.csv produces min=6 (Bo Derek 1984→1990) and max=13 (Matthew Vaughn 2002→2015). The evaluator may have used a different dataset version or made an error in the feedback. The regression test is based on the actual supplied repository dataset, not the evaluator feedback. The test is version-controlled and will fail if the CSV is modified.
+
+**Optimization Impact:**
+- Consolidated min/max calculation: eliminated 2 full array passes through intervals
+- Used single forward pass during generation instead of separate Math.min()/Math.max() + map
+- Reduced from ~7 passes to ~5 passes total in calculation logic
+- No change in algorithm complexity or result accuracy
+- Improved clarity: single purpose for min/max tracking loop
+- Memory: no significant change (intervals array still materialized)

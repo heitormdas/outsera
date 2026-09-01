@@ -57,7 +57,19 @@ Tests exercise the API through HTTP using integration test datasets.
 
 ### `GET /producers/intervals`
 
+Full URL: `http://localhost:3000/producers/intervals`
+
 Returns all results tied for the shortest and longest intervals between consecutive winning years for each producer.
+
+**Quick test:**
+```bash
+curl http://localhost:3000/producers/intervals
+```
+
+Or visit in browser after running `npm start`:
+```
+http://localhost:3000/producers/intervals
+```
 
 Example response:
 

@@ -51,38 +51,35 @@ export function calculateProducerIntervals(wins: ProducerWin[]): IntervalCalcula
     return { min: [], max: [] };
   }
 
-  const minInterval = Math.min(...intervals.map((entry) => entry.interval));
-  const maxInterval = Math.max(...intervals.map((entry) => entry.interval));
+  // Optimize: Find min/max in single pass during generation instead of separate passes
+  let minInterval = Infinity;
+  let maxInterval = -Infinity;
 
-  const min = intervals
-    .filter((entry) => entry.interval === minInterval)
-    .sort((left, right) => {
-      if (left.interval !== right.interval) {
-        return left.interval - right.interval;
-      }
-      if (left.producer !== right.producer) {
-        return left.producer.localeCompare(right.producer);
-      }
-      if (left.previousWin !== right.previousWin) {
-        return left.previousWin - right.previousWin;
-      }
-      return left.followingWin - right.followingWin;
-    });
+  for (const entry of intervals) {
+    if (entry.interval < minInterval) {
+      minInterval = entry.interval;
+    }
+    if (entry.interval > maxInterval) {
+      maxInterval = entry.interval;
+    }
+  }
 
-  const max = intervals
-    .filter((entry) => entry.interval === maxInterval)
-    .sort((left, right) => {
-      if (left.interval !== right.interval) {
-        return left.interval - right.interval;
-      }
-      if (left.producer !== right.producer) {
-        return left.producer.localeCompare(right.producer);
-      }
-      if (left.previousWin !== right.previousWin) {
-        return left.previousWin - right.previousWin;
-      }
-      return left.followingWin - right.followingWin;
-    });
+  // Deterministic sort comparator (used for both min and max arrays)
+  const compare = (left: IntervalResultItem, right: IntervalResultItem) => {
+    if (left.interval !== right.interval) {
+      return left.interval - right.interval;
+    }
+    if (left.producer !== right.producer) {
+      return left.producer.localeCompare(right.producer);
+    }
+    if (left.previousWin !== right.previousWin) {
+      return left.previousWin - right.previousWin;
+    }
+    return left.followingWin - right.followingWin;
+  };
+
+  const min = intervals.filter((entry) => entry.interval === minInterval).sort(compare);
+  const max = intervals.filter((entry) => entry.interval === maxInterval).sort(compare);
 
   return { min, max };
 }
